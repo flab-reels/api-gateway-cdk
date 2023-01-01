@@ -1,40 +1,101 @@
 import * as cdk from 'aws-cdk-lib';
-import { Construct } from 'constructs';
+import {Construct} from 'constructs';
 import * as agw from 'aws-cdk-lib/aws-apigateway'
+import {AuthorizationType, IdentitySource} from 'aws-cdk-lib/aws-apigateway'
 import * as lambda from 'aws-cdk-lib/aws-lambda'
+import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2'
+import * as ec2 from 'aws-cdk-lib/aws-ec2'
+import {CfnOutput, Duration} from "aws-cdk-lib";
 
 export class ApigatewayCdkStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
     const lambdaAuthorizer = new lambda.Function(this, 'lambda_authorizer',{
-      functionName:'authorizer_demo_v1',
+      functionName:'authorizer_v1',
       runtime: lambda.Runtime.PYTHON_3_7,
       handler: 'authorizer.handler',
       code: lambda.Code.fromAsset('lambda'),
+
     })
 
-    const auth = new agw.TokenAuthorizer(this, "demo_authorizer",{
+    const auth = new agw.TokenAuthorizer(this, "auth_authorizer",{
       handler : lambdaAuthorizer,
-      authorizerName : "spring_security_auth"
+      authorizerName : "flab_reels_auth",
+      identitySource : IdentitySource.header("authorizationToken")
+
+    })
+    const api = new agw.RestApi(this, "flab-reels-api-gateway",{
+      restApiName : "flab-reels-api-gateway",
     })
 
-    const api = new agw.RestApi(this, "auth_demo_api",{
-      restApiName : "auth_demo_api",
+
+
+
+    /**
+     *  USER SERVICE API GATEWAY ATTACH
+     */
+
+    const userVpc = ec2.Vpc.fromLookup(this,"referenced-vpc",{
+      vpcId: "vpc-08e2d8f428500ef1a"
+    })
+    // URI NLB DNS 경로로 붙여서 사용할 것
+    const nlbARN = "arn:aws:elasticloadbalancing:ap-northeast-2:087334185325:loadbalancer/net/UserE-usera-KVD2MUZY30NG/504bb34cb4b74794"
+    const nlbDnsName = "UserE-usera-KVD2MUZY30NG-504bb34cb4b74794.elb.ap-northeast-2.amazonaws.com/"
+    const userNLB = elbv2.NetworkLoadBalancer.fromNetworkLoadBalancerAttributes(
+        this,
+        "user-apigateway-nlb",{
+          loadBalancerDnsName: nlbDnsName,
+          loadBalancerArn: nlbARN,
+          vpc:userVpc
+        }
+    )
+    const userVpcLink = new agw.VpcLink(this, 'user-vpc-link',{
+      vpcLinkName:'user-vpc-link',
+      targets:[userNLB],
+
     })
 
-    const getData = api.root.addResource("auth")
-    getData.addMethod("GET",new agw.HttpIntegration('http://authe-autha-1f7oejb8tj1so-41807832.ap-northeast-2.elb.amazonaws.com/auth/authorize',{
-      options:{
+    const userIntegration = new agw.Integration({
+      uri: "http://"+nlbDnsName+"{proxy}",
+      type: agw.IntegrationType.HTTP_PROXY,
+      integrationHttpMethod:"ANY",
+
+      options: {
+        connectionType: agw.ConnectionType.VPC_LINK,
+        vpcLink: userVpcLink,
+        timeout: Duration.seconds(15),
+
         requestParameters:{
-      // header로 넘길것 http integration
-          'integration.request.header.id':`context.authorizer.id`
-        },
-      }
-    }),{
-      authorizer :auth,
-      authorizationType:agw.AuthorizationType.CUSTOM,
+          // header로 넘길것 http integration
+          'integration.request.header.id':`context.authorizer.id`,
+          'integration.request.header.picture':`context.authorizer.picture`,
+          "integration.request.path.proxy": "method.request.path.proxy"
+        }
+      },
+    });
+    const userResource = api.root.addResource("user")
+    userResource.addProxy({
+      anyMethod:true,
+      defaultIntegration:userIntegration,
+      defaultMethodOptions:{
+        authorizer:auth,
+        authorizationType:AuthorizationType.CUSTOM,
+        requestParameters:{
+          'method.request.path.proxy': true,
+        }
+
+      },
+
+
     })
+    //
+    // userResource.addMethod("ANY",
+    //     userIntegration,
+    // )
+
+
+
 
 
 
