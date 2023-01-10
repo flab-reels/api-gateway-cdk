@@ -1,14 +1,10 @@
-# Welcome to your CDK TypeScript project
+# API GATEWAY WORKFLOW
 
-This is a blank project for CDK development with TypeScript.
+## Sequence diagram for accessing inside AWS API GATEWAY
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
+1. Implement OAuth2 and Jwt with Spring security https://github.com/flab-reels/auth
+2. Create Lambda Authorizer for Service Access
+3. Send a request to Spring security service to Lambda Authorizer to validate the token.
+4. Access to each service via AWS API GATEWAY
 
-## Useful commands
-
-* `npm run build`   compile typescript to js
-* `npm run watch`   watch for changes and compile
-* `npm run test`    perform the jest unit tests
-* `cdk deploy`      deploy this stack to your default AWS account/region
-* `cdk diff`        compare deployed stack with current state
-* `cdk synth`       emits the synthesized CloudFormation template
+<img width="4378" alt="API GATEWAY Sequence Diagram" src="https://user-images.githubusercontent.com/32415176/211599402-432bffc4-a9c0-458b-893c-68256c573e26.png">
