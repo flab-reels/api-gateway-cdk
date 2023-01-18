@@ -29,7 +29,35 @@ export class ApigatewayCdkStack extends cdk.Stack {
       restApiName : "flab-reels-api-gateway",
     })
 
+    const mockIntegration = new agw.Integration({
+      uri: "https://"+"naver.com"+"{proxy}",
+      type: agw.IntegrationType.HTTP_PROXY,
+      integrationHttpMethod:"ANY",
 
+      options: {
+
+        requestParameters:{
+          // header로 넘길것 http integration
+          'integration.request.header.id':`context.authorizer.id`,
+          'integration.request.header.picture':`context.authorizer.picture`,
+          "integration.request.path.proxy": "method.request.path.proxy"
+        }
+      },
+    });
+    const mockResource = api.root.addResource("user")
+    mockResource.addProxy({
+      anyMethod:true,
+      defaultIntegration:mockIntegration,
+      defaultMethodOptions:{
+        authorizer:auth,
+        authorizationType:AuthorizationType.CUSTOM,
+        requestParameters:{
+          'method.request.path.proxy': true,
+        }
+      },
+
+
+    })
 
 
     /**
