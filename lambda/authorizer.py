@@ -21,7 +21,7 @@ def handler(event, context):
             {"Version": "2012-10-17",
              "Statement": [
                  {"Action": "execute-api:Invoke",
-                  "Resource": ["arn:aws:execute-api:ap-northeast-2:087334185325:bsv3faywm9/*/*"],
+                  "Resource": ["arn:aws:execute-api:ap-northeast-2:087334185325:ic2m1oguzg/*/*"],
                   "Effect": auth
                   }]
              },
