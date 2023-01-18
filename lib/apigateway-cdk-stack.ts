@@ -36,64 +36,58 @@ export class ApigatewayCdkStack extends cdk.Stack {
      *  USER SERVICE API GATEWAY ATTACH
      */
 
-    const userVpc = ec2.Vpc.fromLookup(this,"referenced-vpc",{
-      vpcId: "vpc-08e2d8f428500ef1a"
-    })
-    // URI NLB DNS 경로로 붙여서 사용할 것
-    const nlbARN = "arn:aws:elasticloadbalancing:ap-northeast-2:087334185325:loadbalancer/net/UserE-usera-KVD2MUZY30NG/504bb34cb4b74794"
-    const nlbDnsName = "UserE-usera-KVD2MUZY30NG-504bb34cb4b74794.elb.ap-northeast-2.amazonaws.com/"
-    const userNLB = elbv2.NetworkLoadBalancer.fromNetworkLoadBalancerAttributes(
-        this,
-        "user-apigateway-nlb",{
-          loadBalancerDnsName: nlbDnsName,
-          loadBalancerArn: nlbARN,
-          vpc:userVpc
-        }
-    )
-    const userVpcLink = new agw.VpcLink(this, 'user-vpc-link',{
-      vpcLinkName:'user-vpc-link',
-      targets:[userNLB],
-
-    })
-
-    const userIntegration = new agw.Integration({
-      uri: "http://"+nlbDnsName+"{proxy}",
-      type: agw.IntegrationType.HTTP_PROXY,
-      integrationHttpMethod:"ANY",
-
-      options: {
-        connectionType: agw.ConnectionType.VPC_LINK,
-        vpcLink: userVpcLink,
-        timeout: Duration.seconds(15),
-
-        requestParameters:{
-          // header로 넘길것 http integration
-          'integration.request.header.id':`context.authorizer.id`,
-          'integration.request.header.picture':`context.authorizer.picture`,
-          "integration.request.path.proxy": "method.request.path.proxy"
-        }
-      },
-    });
-    const userResource = api.root.addResource("user")
-    userResource.addProxy({
-      anyMethod:true,
-      defaultIntegration:userIntegration,
-      defaultMethodOptions:{
-        authorizer:auth,
-        authorizationType:AuthorizationType.CUSTOM,
-        requestParameters:{
-          'method.request.path.proxy': true,
-        }
-
-      },
-
-
-    })
-    //
-    // userResource.addMethod("ANY",
-    //     userIntegration,
+    // const userVpc = ec2.Vpc.fromLookup(this,"referenced-vpc",{
+    //   vpcId: "vpc-074198c279776a046"
+    // })
+    // // URI NLB DNS 경로로 붙여서 사용할 것
+    // const userNlbARN = "arn:aws:elasticloadbalancing:ap-northeast-2:087334185325:loadbalancer/net/UserE-usera-YTUNNTWNFLWO/2b767139c86750c2"
+    // const userNlbDnsName = "UserE-usera-YTUNNTWNFLWO-2b767139c86750c2.elb.ap-northeast-2.amazonaws.com/"
+    // const userNLB = elbv2.NetworkLoadBalancer.fromNetworkLoadBalancerAttributes(
+    //     this,
+    //     "user-apigateway-nlb",{
+    //       loadBalancerDnsName: userNlbDnsName,
+    //       loadBalancerArn: userNlbARN,
+    //       vpc:userVpc
+    //     }
     // )
-
+    // const userVpcLink = new agw.VpcLink(this, 'user-vpc-link',{
+    //   vpcLinkName:'user-vpc-link',
+    //   targets:[userNLB],
+    //
+    // })
+    //
+    // const userIntegration = new agw.Integration({
+    //   uri: "http://"+userNlbDnsName+"{proxy}",
+    //   type: agw.IntegrationType.HTTP_PROXY,
+    //   integrationHttpMethod:"ANY",
+    //
+    //   options: {
+    //     connectionType: agw.ConnectionType.VPC_LINK,
+    //     vpcLink: userVpcLink,
+    //     timeout: Duration.seconds(15),
+    //
+    //     requestParameters:{
+    //       // header로 넘길것 http integration
+    //       'integration.request.header.id':`context.authorizer.id`,
+    //       'integration.request.header.picture':`context.authorizer.picture`,
+    //       "integration.request.path.proxy": "method.request.path.proxy"
+    //     }
+    //   },
+    // });
+    // const userResource = api.root.addResource("user")
+    // userResource.addProxy({
+    //   anyMethod:true,
+    //   defaultIntegration:userIntegration,
+    //   defaultMethodOptions:{
+    //     authorizer:auth,
+    //     authorizationType:AuthorizationType.CUSTOM,
+    //     requestParameters:{
+    //       'method.request.path.proxy': true,
+    //     }
+    //   },
+    //
+    //
+    // })
 
 
 
