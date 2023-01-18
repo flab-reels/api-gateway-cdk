@@ -31,7 +31,7 @@ export class ApigatewayCdkStack extends cdk.Stack {
 
     const mockIntegration = new agw.Integration({
 
-      type: agw.IntegrationType.HTTP_PROXY,
+      type: agw.IntegrationType.MOCK,
       integrationHttpMethod:"ANY",
 
       options: {
