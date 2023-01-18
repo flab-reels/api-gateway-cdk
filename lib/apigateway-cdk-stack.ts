@@ -89,7 +89,9 @@ export class ApigatewayCdkStack extends cdk.Stack {
     //
     // })
 
-
+    /**
+     *  FEED SERVICE API GATEWAY ATTACH - 형석쓰 붙여줘요
+     */
 
 
 
