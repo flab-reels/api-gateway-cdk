@@ -30,7 +30,7 @@ export class ApigatewayCdkStack extends cdk.Stack {
     })
 
     const mockIntegration = new agw.Integration({
-      uri: "https://"+"naver.com"+"{proxy}",
+
       type: agw.IntegrationType.HTTP_PROXY,
       integrationHttpMethod:"ANY",
 
