@@ -44,7 +44,7 @@ export class ApigatewayCdkStack extends cdk.Stack {
         }
       },
     });
-    const mockResource = api.root.addResource("user")
+    const mockResource = api.root.addResource("mock")
     mockResource.addProxy({
       anyMethod:true,
       defaultIntegration:mockIntegration,
