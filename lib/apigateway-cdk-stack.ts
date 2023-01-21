@@ -121,6 +121,54 @@ export class ApigatewayCdkStack extends cdk.Stack {
      *  FEED SERVICE API GATEWAY ATTACH - 형석쓰 붙여줘요
      */
 
+    const demoVpc = ec2.Vpc.fromLookup(this,"demo-referenced-vpc",{
+      vpcId: "vpc-0ef341fcf14b1f320"
+    })
+    // URI NLB DNS 경로로 붙여서 사용할 것
+    const demoNlbARN = "arn:aws:elasticloadbalancing:ap-northeast-2:087334185325:loadbalancer/net/DemoS-demos-1A8F4BTPV3GAV/4ea1dc4a2e7b0d81"
+    const demoNlbDnsName = "DemoS-demos-1A8F4BTPV3GAV-4ea1dc4a2e7b0d81.elb.ap-northeast-2.amazonaws.com/"
+    const demoNLB = elbv2.NetworkLoadBalancer.fromNetworkLoadBalancerAttributes(
+        this,
+        "demo-apigateway-nlb",{
+          loadBalancerDnsName: demoNlbDnsName,
+          loadBalancerArn: demoNlbARN,
+          vpc:demoVpc
+        }
+    )
+    const demoVpcLink = new agw.VpcLink(this, 'demo-vpc-link',{
+      vpcLinkName:'demo-vpc-link',
+      targets:[demoNLB],
+    
+    })
+
+    const demoServiceIntegration = new agw.Integration({
+
+      type: agw.IntegrationType.HTTP_PROXY,
+      integrationHttpMethod:"ANY",
+      uri: "http://"+demoNlbDnsName+"{proxy}",
+      options: {
+
+        requestParameters:{
+          // header로 넘길것 http integration
+          'integration.request.header.id':`context.authorizer.id`,
+          'integration.request.header.picture':`context.authorizer.picture`,
+          "integration.request.path.proxy": "method.request.path.proxy"
+        }
+      },
+    });
+    const demoServiceResource = api.root.addResource("demo")
+    demoServiceResource.addProxy({
+      anyMethod:true,
+      defaultIntegration:demoServiceIntegration,
+      defaultMethodOptions:{
+        authorizer:auth,
+        authorizationType:AuthorizationType.CUSTOM,
+        requestParameters:{
+          'method.request.path.proxy': true,
+        }
+      },
+
+    })
 
 
 
