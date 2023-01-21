@@ -142,11 +142,13 @@ export class ApigatewayCdkStack extends cdk.Stack {
     })
 
     const demoServiceIntegration = new agw.Integration({
-
-      type: agw.IntegrationType.HTTP_PROXY,
       integrationHttpMethod:"ANY",
       uri: "http://"+demoNlbDnsName+"{proxy}",
+      type: agw.IntegrationType.HTTP_PROXY,
       options: {
+        connectionType: agw.ConnectionType.VPC_LINK,
+        vpcLink: demoVpcLink,
+        timeout: Duration.seconds(15),
 
         requestParameters:{
           // header로 넘길것 http integration
