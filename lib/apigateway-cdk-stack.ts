@@ -118,9 +118,64 @@ export class ApigatewayCdkStack extends cdk.Stack {
     // })
 
     /**
-     *  FEED SERVICE API GATEWAY ATTACH - 형석쓰 붙여줘요
-     */
+     *  ATTACH FEED SERVICE TO API GATEWAY 
+    */
+    const feedVpc = ec2.Vpc.fromLookup(this,"feed-referenced-vpc",{
+      vpcId: "vpc-096f2736cdce822b0"
+    })
 
+    // URI NLB DNS 경로로 붙여서 사용할 것
+    const feedNlbARN = "arn:aws:elasticloadbalancing:ap-northeast-2:087334185325:loadbalancer/net/feed-nlb/3fd6fc05d192ad65"
+    const feedNlbDnsName = "feed-nlb-3fd6fc05d192ad65.elb.ap-northeast-2.amazonaws.com/"
+    const feedNLB = elbv2.NetworkLoadBalancer.fromNetworkLoadBalancerAttributes(
+        this,
+        "feed-apigateway-nlb",{
+          loadBalancerDnsName: feedNlbDnsName,
+          loadBalancerArn: feedNlbARN,
+          vpc:feedVpc
+        }
+    )
+    const feedVpcLink = new agw.VpcLink(this, 'feed-vpc-link',{
+      vpcLinkName:'feed-vpc-link',
+      targets:[feedNLB],
+    
+    })
+
+    const feedServiceIntegration = new agw.Integration({
+      integrationHttpMethod:"ANY",
+      uri: "http://"+feedNlbDnsName+"{proxy}",
+      type: agw.IntegrationType.HTTP_PROXY,
+      options: {
+        connectionType: agw.ConnectionType.VPC_LINK,
+        vpcLink: feedVpcLink,
+        timeout: Duration.seconds(15),
+
+        requestParameters:{
+          // header로 넘길것 http integration
+          'integration.request.header.id':`context.authorizer.id`,
+          'integration.request.header.picture':`context.authorizer.picture`,
+          "integration.request.path.proxy": "method.request.path.proxy"
+        }
+      },
+    });
+    const feedServiceResource = api.root.addResource("feed")
+    feedServiceResource.addProxy({
+      anyMethod:true,
+      defaultIntegration:feedServiceIntegration,
+      defaultMethodOptions:{
+        authorizer:auth,
+        authorizationType:AuthorizationType.CUSTOM,
+        requestParameters:{
+          'method.request.path.proxy': true,
+        }
+      },
+
+    })
+    
+
+    /**
+     *  ATTACH DEMO SERIVICE TO APIGATEWAY 
+     */
     const demoVpc = ec2.Vpc.fromLookup(this,"demo-referenced-vpc",{
       vpcId: "vpc-0ef341fcf14b1f320"
     })
